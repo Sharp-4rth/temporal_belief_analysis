@@ -12,10 +12,8 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
 
     Args:
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-
     Returns:
         Configured logger instance
-
     Example:
         >>> logger = setup_logging("DEBUG")
         >>> logger.info("Starting stance detection training")

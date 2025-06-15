@@ -1,128 +1,195 @@
+"""
+Simple temporal analysis for detecting belief changes.
+"""
+
+import pandas as pd
 import numpy as np
+from typing import List, Dict, Any
 import logging
-from typing import Dict, Any, List, Tuple
-from ..utils.config import ProjectConfig
+from datetime import datetime, timedelta
 
 
-class BeliefChangeDetector:
-    """Detect and analyze belief changes in user temporal data.
+class TemporalAnalyzer:
+    """Simple analyzer for detecting belief changes over time."""
 
-    This class processes user timeline data to identify significant stance
-    shifts, change points, and temporal patterns in political belief evolution.
+    def __init__(self, logger: logging.Logger = None):
+        self.logger = logger or logging.getLogger(__name__)
 
-    Attributes:
-        config: Project configuration with analysis parameters
-        logger: Logger for tracking analysis operations
-        change_threshold: Minimum change magnitude to consider significant
-        window_size: Size of temporal window for change point analysis
-    """
-
-    def __init__(self, config: ProjectConfig, logger: logging.Logger):
-        """Initialize belief change detector with configuration.
-
-        Args:
-            config: Project configuration containing analysis parameters
-            logger: Logger instance for tracking operations
-        """
-        self.config = config
-        self.logger = logger
-        self.change_threshold = config.change_threshold
-        self.window_size = config.temporal_window_days
+        # Simple parameters
+        self.change_threshold = 0.5  # How big a change to consider significant
+        self.window_size = 5  # How many posts to look at for change detection
 
     def detect_belief_changes(self, user_timeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Detect significant belief changes in user's temporal posting history.
-
-        Analyzes stance trajectory to identify points where user's political
-        position shifted significantly, with statistical validation.
+        """
+        Detect significant belief changes in a user's timeline.
 
         Args:
-            user_timeline: List of posts with timestamps and stance predictions
+            user_timeline: List of posts with stance predictions
 
         Returns:
-            List of detected change points with metadata
-
-        Example:
-            >>> timeline = [{'timestamp': date, 'stance': 'liberal', 'confidence': 0.9}, ...]
-            >>> changes = detector.detect_belief_changes(timeline)
-            >>> print(f"Detected {len(changes)} significant belief changes")
+            List of detected change points
         """
-        if len(user_timeline) < self.window_size:
-            self.logger.warning(f"Timeline too short for analysis: {len(user_timeline)} posts")
+        if len(user_timeline) < self.window_size * 2:
+            self.logger.debug(f"Timeline too short: {len(user_timeline)} posts")
             return []
 
         changes = []
-        stance_scores = self._convert_to_numeric_scores(user_timeline)
+        stance_scores = self._convert_to_scores(user_timeline)
 
-        # Sliding window change point detection
+        # Simple sliding window change detection
         for i in range(self.window_size, len(stance_scores) - self.window_size):
+            # Compare before and after windows
             before_window = stance_scores[i - self.window_size:i]
             after_window = stance_scores[i:i + self.window_size]
 
-            # Calculate change magnitude
-            before_mean = np.mean(before_window)
-            after_mean = np.mean(after_window)
-            change_magnitude = abs(after_mean - before_mean)
+            before_avg = np.mean(before_window)
+            after_avg = np.mean(after_window)
 
-            # Statistical significance test
-            from scipy.stats import ttest_ind
-            t_stat, p_value = ttest_ind(before_window, after_window)
+            change_magnitude = abs(after_avg - before_avg)
 
-            if (change_magnitude > self.change_threshold and
-                    p_value < self.config.significance_level):
+            # Check if change is significant
+            if change_magnitude > self.change_threshold:
                 change_point = {
                     'timestamp': user_timeline[i]['timestamp'],
                     'index': i,
-                    'from_stance_mean': before_mean,
-                    'to_stance_mean': after_mean,
+                    'from_stance_avg': before_avg,
+                    'to_stance_avg': after_avg,
                     'change_magnitude': change_magnitude,
-                    'p_value': p_value,
-                    'confidence': user_timeline[i]['confidence'],
-                    'direction': 'progressive' if after_mean > before_mean else 'conservative'
+                    'direction': 'more_liberal' if after_avg > before_avg else 'more_conservative'
                 }
                 changes.append(change_point)
 
-                self.logger.debug(f"Change detected at {change_point['timestamp']}: "
-                                  f"{change_magnitude:.3f} magnitude, p={p_value:.3f}")
+                self.logger.debug(f"Change detected at index {i}: {change_magnitude:.2f}")
 
-        self.logger.info(f"Detected {len(changes)} significant belief changes")
+        self.logger.info(f"Detected {len(changes)} belief changes in timeline")
         return changes
 
-    def _convert_to_numeric_scores(self, timeline: List[Dict[str, Any]]) -> List[float]:
-        """Convert stance labels to numeric scores for analysis.
+    def _convert_to_scores(self, timeline: List[Dict[str, Any]]) -> List[float]:
+        """
+        Convert stance labels to numeric scores for analysis.
 
-        Args:
-            timeline: List of posts with stance predictions
-
-        Returns:
-            List of numeric stance scores (-1 to +1 scale)
+        against = -1, neutral = 0, favor = +1
         """
         stance_mapping = {'against': -1.0, 'neutral': 0.0, 'favor': 1.0}
-        return [stance_mapping.get(post['stance'], 0.0) for post in timeline]
 
-    def analyze_temporal_patterns(self, user_timeline: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Analyze temporal patterns in user's belief evolution.
+        scores = []
+        for post in timeline:
+            stance = post.get('stance', 'neutral')
+            score = stance_mapping.get(stance, 0.0)
+            scores.append(score)
+
+        return scores
+
+    def analyze_user_patterns(self, user_timeline: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Analyze temporal patterns for a single user.
 
         Args:
-            user_timeline: User's posting history with stance predictions
+            user_timeline: User's posts with stance predictions
 
         Returns:
-            Dictionary containing temporal pattern analysis results
+            Dictionary with pattern analysis
         """
         if not user_timeline:
             return {}
 
-        stance_scores = self._convert_to_numeric_scores(user_timeline)
+        stance_scores = self._convert_to_scores(user_timeline)
         timestamps = [post['timestamp'] for post in user_timeline]
 
-        # Calculate temporal statistics
+        # Calculate basic statistics
         analysis = {
             'total_posts': len(user_timeline),
             'time_span_days': (max(timestamps) - min(timestamps)).days,
             'stance_variance': np.var(stance_scores),
-            'stance_trend': np.corrcoef(range(len(stance_scores)), stance_scores)[0, 1],
-            'average_confidence': np.mean([post['confidence'] for post in user_timeline]),
-            'posting_frequency': len(user_timeline) / max(1, (max(timestamps) - min(timestamps)).days),
-            'stance_consistency': 1.0 - np.var(stance_scores)  # Higher = more consistent
+            'average_stance': np.mean(stance_scores),
+            'stance_trend': self._calculate_trend(stance_scores),
+            'consistency': 1.0 - np.var(stance_scores),  # Higher = more consistent
+            'posting_frequency': len(user_timeline) / max(1, (max(timestamps) - min(timestamps)).days)
         }
 
         return analysis
+
+    def _calculate_trend(self, scores: List[float]) -> float:
+        """Calculate overall trend in stance scores (positive = becoming more liberal)."""
+        if len(scores) < 2:
+            return 0.0
+
+        # Simple linear trend
+        x = np.arange(len(scores))
+        correlation = np.corrcoef(x, scores)[0, 1]
+
+        return correlation if not np.isnan(correlation) else 0.0
+
+    def batch_analyze_users(self, user_timelines: Dict[str, List[Dict]]) -> Dict[str, Dict]:
+        """
+        Analyze patterns for multiple users.
+
+        Args:
+            user_timelines: Dict mapping user_id to their timeline
+
+        Returns:
+            Dict mapping user_id to their analysis results
+        """
+        results = {}
+
+        self.logger.info(f"Analyzing patterns for {len(user_timelines)} users...")
+
+        for user_id, timeline in user_timelines.items():
+            # Analyze patterns
+            patterns = self.analyze_user_patterns(timeline)
+
+            # Detect changes
+            changes = self.detect_belief_changes(timeline)
+
+            results[user_id] = {
+                'patterns': patterns,
+                'changes': changes,
+                'num_changes': len(changes)
+            }
+
+        self.logger.info(f"Completed analysis for {len(results)} users")
+        return results
+
+
+def quick_test():
+    """Test the temporal analyzer."""
+    import logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
+    analyzer = TemporalAnalyzer(logger)
+
+    # Create sample timeline with stance predictions
+    sample_timeline = [
+        {'timestamp': datetime(2024, 1, 1), 'stance': 'favor', 'text': 'Liberal post 1'},
+        {'timestamp': datetime(2024, 1, 5), 'stance': 'favor', 'text': 'Liberal post 2'},
+        {'timestamp': datetime(2024, 1, 10), 'stance': 'neutral', 'text': 'Neutral post'},
+        {'timestamp': datetime(2024, 1, 15), 'stance': 'against', 'text': 'Conservative post 1'},
+        {'timestamp': datetime(2024, 1, 20), 'stance': 'against', 'text': 'Conservative post 2'},
+        {'timestamp': datetime(2024, 1, 25), 'stance': 'against', 'text': 'Conservative post 3'},
+        {'timestamp': datetime(2024, 2, 1), 'stance': 'neutral', 'text': 'Back to neutral'},
+        {'timestamp': datetime(2024, 2, 5), 'stance': 'favor', 'text': 'Back to liberal'},
+    ]
+
+    print("Testing Temporal Analysis:")
+    print("=" * 50)
+
+    # Analyze user patterns
+    patterns = analyzer.analyze_user_patterns(sample_timeline)
+    print("User Patterns:")
+    for key, value in patterns.items():
+        print(f"  {key}: {value:.3f}" if isinstance(value, float) else f"  {key}: {value}")
+
+    print()
+
+    # Detect changes
+    changes = analyzer.detect_belief_changes(sample_timeline)
+    print(f"Detected {len(changes)} belief changes:")
+    for i, change in enumerate(changes):
+        print(f"  {i + 1}. {change['timestamp']} - {change['direction']} (magnitude: {change['change_magnitude']:.2f})")
+
+    return analyzer
+
+
+if __name__ == "__main__":
+    analyzer = quick_test()
