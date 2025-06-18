@@ -10,7 +10,7 @@ __description__ = "Temporal political stance detection and belief change predict
 from .utils.config import ProjectConfig
 from .utils.logger import setup_logging
 from data.loaders import RedditDataLoader
-from .models.stance_detection_models import StanceDetector
+from .models.stance_detection import StanceDetector
 from .core.temporal_analyzer import TemporalAnalyzer
 
 def initialize_project(log_level: str = "INFO"):

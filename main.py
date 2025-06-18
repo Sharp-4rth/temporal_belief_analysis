@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent / "src"))
 
-from temporal_belief.models.stance_detection_models import StanceDetector
+from temporal_belief.models.stance_detection import StanceDetector
 from temporal_belief.data.loaders import RedditDataLoader
 from temporal_belief.core.temporal_analyzer import TemporalAnalyzer
 from temporal_belief.utils.config import ProjectConfig
