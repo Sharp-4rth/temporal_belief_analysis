@@ -5,13 +5,13 @@ To be written.
 
 __version__ = "1.0.0"
 __author__ = "Leonidas Theodoropoulos"
-__description__ = "Temporal political stance detection and belief change prediction"
+__description__ = "Temporal belief change "
 
 from .utils.config import ProjectConfig
 from .utils.logger import setup_logging
 from data.loaders import RedditDataLoader
-from .models.stance_detection import StanceDetector
-from .core.temporal_analyzer import TemporalAnalyzer
+from .core.topic_detection import TopicDetector
+from .core.stance_detection import StanceDetector
 
 def initialize_project(log_level: str = "INFO"):
     """Initialize project with configuration and logging.
@@ -32,8 +32,8 @@ def initialize_project(log_level: str = "INFO"):
 __all__ = [
     'ProjectConfig',
     'setup_logging',
-    'StanceDetector'
-    'TemporalAnalyzer',
+    'StanceDetector',
+    'TopicDetector',
     'RedditDataLoader',
     'initialize_project'
 ]

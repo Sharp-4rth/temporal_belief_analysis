@@ -65,3 +65,33 @@ class ProjectConfig:
         """Create necessary directories after initialization."""
         for directory in [self.data_dir, self.model_dir, self.results_dir, self.figures_dir]:
             directory.mkdir(parents=True, exist_ok=True)
+
+
+# Classification labels - separate from the main config class
+POLITICAL_TOPICS = [
+    "healthcare",
+    "economy",
+    "immigration",
+    "environment",
+    "education",
+    "foreign_policy",
+    "social_issues",
+    "taxation",
+    "gun_rights",
+    "abortion",
+    "other"
+]
+
+STANCE_LABELS = [
+    "liberal",
+    "conservative",
+    "neutral"
+]
+
+DETAILED_STANCE_LABELS = [
+    "strongly liberal",
+    "moderately liberal",
+    "neutral",
+    "moderately conservative",
+    "strongly conservative"
+]
