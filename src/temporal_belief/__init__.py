@@ -9,7 +9,7 @@ __description__ = "Temporal belief change "
 
 from .utils.config import ProjectConfig
 from .utils.logger import setup_logging
-from data.loaders import RedditDataLoader
+# from data.loaders import RedditDataLoader
 from .core.topic_detection import TopicDetector
 from .core.stance_detection import StanceDetector
 
@@ -34,6 +34,6 @@ __all__ = [
     'setup_logging',
     'StanceDetector',
     'TopicDetector',
-    'RedditDataLoader',
+    # 'RedditDataLoader',
     'initialize_project'
 ]

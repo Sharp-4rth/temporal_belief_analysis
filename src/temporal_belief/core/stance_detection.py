@@ -5,17 +5,18 @@ import logging
 from tqdm import tqdm
 
 from ..models.bart_classifier import BARTZeroShotClassifier
-from ..utils.config import STANCE_LABELS
+from ..utils.config import STANCE_LABELS, ProjectConfig
 
 logger = logging.getLogger(__name__)
 
 class StanceDetector:
     """Detect political stance in ConvoKit utterances using BART."""
 
-    def __init__(self, model_name: str = "facebook/bart-large-mnli",
-                 stance_labels: Optional[List[str]] = None):
+    def __init__(self, stance_labels: Optional[List[str]] = None,
+                 config: ProjectConfig = None):
         """Initialize stance detector."""
-        self.classifier = BARTZeroShotClassifier(model_name)
+        self.config = config or ProjectConfig()
+        self.classifier = BARTZeroShotClassifier(self.config.bart_model_name)
         self.stance_labels = stance_labels or STANCE_LABELS
         logger.info(f"Initialized stance detector with labels: {self.stance_labels}")
 
@@ -30,7 +31,8 @@ class StanceDetector:
             "all_scores": result["all_scores"]
         }
 
-    def process_corpus_utterances(self, corpus, batch_size: int = 50) -> None:
+    def process_corpus_utterances(self, corpus, batch_size: int = 50,
+                              save_path: Optional[str] = None) -> None:
         """Process all utterances in corpus for stance detection."""
         utterances = list(corpus.iter_utterances())
         logger.info(f"Processing {len(utterances)} utterances for stance detection")
@@ -52,3 +54,9 @@ class StanceDetector:
                     logger.error(f"Failed to process utterance {utt.id}: {e}")
                     utt.add_meta("detected_stance", "unknown")
                     utt.add_meta("stance_confidence", 0.0)
+
+        if save_path:
+            corpus.dump(save_path)
+            logger.info(f"Saved processed corpus to {save_path}")
+
+        logger.info("Stance detection processing complete")

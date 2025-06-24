@@ -40,6 +40,7 @@ class ProjectConfig:
     figures_dir: Path = Path("reports/figures")
 
     # Model configurations
+    bart_model_name: str ="facebook/bart-large-mnli"
     bert_model_name: str = "bert-base-uncased"
     lstm_hidden_size: int = 128
     max_sequence_length: int = 512
@@ -69,17 +70,23 @@ class ProjectConfig:
 
 # Classification labels - separate from the main config class
 POLITICAL_TOPICS = [
-    "healthcare",
-    "economy",
-    "immigration",
-    "environment",
-    "education",
-    "foreign_policy",
-    "social_issues",
-    "taxation",
-    "gun_rights",
-    "abortion",
-    "other"
+    'healthcare policy',
+    'immigration policy',
+    'economic policy',
+    'gun rights and control',
+    'abortion and reproductive rights',
+    'climate change and energy policy',
+    'foreign policy and defense',
+    'civil rights and social issues',
+    'taxation and government spending',
+    'education policy',
+    'criminal justice and policing',
+    'voting rights and elections',
+    'political figures and campaigns',
+    'congressional politics',
+    'electoral politics',
+    'political parties and ideology',
+    'media and political commentary'
 ]
 
 STANCE_LABELS = [

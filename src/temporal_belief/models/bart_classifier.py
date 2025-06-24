@@ -3,6 +3,7 @@
 from transformers import pipeline
 from typing import List, Dict, Any, Optional
 import logging
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +24,15 @@ class BARTZeroShotClassifier:
     def _load_model(self):
         """Load the BART model for zero-shot classification."""
         try:
+            # Add device parameter for GPU acceleration
+            device = 0 if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else -1
+
             self.classifier = pipeline(
-                "zero-shot-classification",
-                model=self.model_name
+                task="zero-shot-classification",
+                model=self.model_name,
+                device=device  # Add this line
             )
-            logger.info(f"Loaded BART model: {self.model_name}")
+            logger.info(f"Loaded BART model: {self.model_name} on device: {'GPU' if device == 0 else 'CPU'}")
         except Exception as e:
             logger.error(f"Failed to load BART model: {e}")
             raise

@@ -5,17 +5,18 @@ import logging
 from tqdm import tqdm
 
 from ..models.bart_classifier import BARTZeroShotClassifier
-from ..utils.config import POLITICAL_TOPICS
+from ..utils.config import POLITICAL_TOPICS, ProjectConfig
 
 logger = logging.getLogger(__name__)
 
 class TopicDetector:
     """Detect topics in ConvoKit conversations using BART."""
 
-    def __init__(self, model_name: str = "facebook/bart-large-mnli",
-                 topics: Optional[List[str]] = None):
+    def __init__(self, topics: Optional[List[str]] = None,
+                 config: ProjectConfig = None):
         """Initialize topic detector."""
-        self.classifier = BARTZeroShotClassifier(model_name)
+        self.config = config or ProjectConfig()
+        self.classifier = BARTZeroShotClassifier(self.config.bart_model_name)
         self.topics = topics or POLITICAL_TOPICS
         logger.info(f"Initialized topic detector with {len(self.topics)} topics")
 
@@ -28,6 +29,9 @@ class TopicDetector:
 
         original_post = utterances[0].text
         result = self.classifier.classify_text(original_post, self.topics)
+
+        # Clean up the result
+        # clean_topic = result["label"].replace(" policy", "")
 
         return {
             "topic": result["label"],
@@ -43,6 +47,7 @@ class TopicDetector:
         conversations = list(corpus.iter_conversations())
         logger.info(f"Processing {len(conversations)} conversations for topic detection")
 
+        # Progress bar library:
         for i in tqdm(range(0, len(conversations), batch_size),
                       desc="Processing conversations"):
             batch = conversations[i:i + batch_size]
