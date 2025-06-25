@@ -5,7 +5,7 @@ To be written.
 
 __version__ = "1.0.0"
 __author__ = "Leonidas Theodoropoulos"
-__description__ = "Temporal belief change "
+__description__ = "Longitudinal belief change analysis"
 
 from .utils.config import ProjectConfig
 from .utils.logger import setup_logging

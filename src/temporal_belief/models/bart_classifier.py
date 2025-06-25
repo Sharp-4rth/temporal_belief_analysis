@@ -72,3 +72,43 @@ class BARTZeroShotClassifier:
                 "confidence": 0.0,
                 "all_scores": {label: 0.0 for label in candidate_labels}
             }
+
+    def classify_batch(self, texts: List[str], candidate_labels: List[str]) -> List[Dict[str, Any]]:
+        """Classify multiple texts at once for better GPU utilization.
+
+        Args:
+            texts: List of input texts to classify
+            candidate_labels: List of possible labels
+
+        Returns:
+            List of classification results, one per input text
+        """
+        if not self.classifier:
+            raise RuntimeError("Classifier not initialized")
+
+        if not texts:
+            return []
+
+        try:
+            # Process all texts at once - this is where the speedup happens
+            results = self.classifier(texts, candidate_labels)
+
+            # Convert to your expected format
+            batch_results = []
+            for result in results:
+                batch_results.append({
+                    "label": result["labels"][0],
+                    "confidence": result["scores"][0],
+                    "all_scores": dict(zip(result["labels"], result["scores"]))
+                })
+
+            return batch_results
+
+        except Exception as e:
+            logger.error(f"Batch classification failed: {e}")
+            # Return unknown results for all texts
+            return [{
+                "label": "unknown",
+                "confidence": 0.0,
+                "all_scores": {label: 0.0 for label in candidate_labels}
+            } for _ in texts]
