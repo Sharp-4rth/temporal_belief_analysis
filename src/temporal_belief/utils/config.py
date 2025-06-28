@@ -68,7 +68,7 @@ class ProjectConfig:
             directory.mkdir(parents=True, exist_ok=True)
 
 
-# Classification labels - separate from the main config class
+# Classification labels
 POLITICAL_TOPICS = [
     'healthcare policy',
     'immigration policy',
@@ -89,10 +89,174 @@ POLITICAL_TOPICS = [
     'media and political commentary'
 ]
 
-STANCE_LABELS = [
-    "strongly liberal",
-    "moderately liberal",
-    "neutral",
-    "moderately conservative",
-    "strongly conservative"
-]
+
+TOPIC_STANCE_HYPOTHESES = {
+    'abortion and reproductive rights': {
+        'strongly_favor': [
+            'The author strongly supports abortion rights and reproductive freedom',
+            'This comment advocates for unrestricted access to abortion services',
+            'The author expresses strong pro-choice activist viewpoints'
+        ],
+        'moderately_favor': [
+            'The author moderately supports abortion rights with some limitations',
+            'This comment leans toward pro-choice but accepts some restrictions',
+            'The author supports reproductive rights with reasonable regulations'
+        ],
+        'neutral': [
+            'This comment provides neutral information about abortion policy',
+            'The author presents balanced views on reproductive rights',
+            'This text discusses abortion without taking a clear stance'
+        ],
+        'moderately_against': [
+            'The author has concerns about abortion but accepts some circumstances',
+            'This comment leans pro-life but allows for exceptions',
+            'The author moderately opposes abortion with some flexibility'
+        ],
+        'strongly_against': [
+            'The author strongly opposes abortion and supports pro-life positions',
+            'This comment advocates for complete protection of unborn life',
+            'The author expresses strong anti-abortion activist viewpoints'
+        ]
+    },
+
+    'gun rights and control': {
+        'strongly_favor': [
+            'The author strongly supports gun rights and Second Amendment freedoms',
+            'This comment advocates for unrestricted firearm ownership rights',
+            'The author expresses strong pro-gun activist viewpoints'
+        ],
+        'moderately_favor': [
+            'The author supports gun rights but accepts some safety regulations',
+            'This comment leans pro-gun but allows reasonable restrictions',
+            'The author favors gun ownership with common-sense limitations'
+        ],
+        'neutral': [
+            'This comment provides neutral information about gun policy',
+            'The author presents balanced views on firearm regulations',
+            'This text discusses guns without taking a clear stance'
+        ],
+        'moderately_against': [
+            'The author supports gun control but respects some ownership rights',
+            'This comment leans toward restrictions but allows some gun rights',
+            'The author moderately favors gun control with exceptions'
+        ],
+        'strongly_against': [
+            'The author strongly supports gun control and firearm restrictions',
+            'This comment advocates for strict limitations on gun ownership',
+            'The author expresses strong gun control activist viewpoints'
+        ]
+    },
+
+    'immigration': {
+        'strongly_favor': [
+            'The author strongly supports immigration and open border policies',
+            'This comment advocates for expanded immigration and refugee rights',
+            'The author expresses strong pro-immigration activist viewpoints'
+        ],
+        'moderately_favor': [
+            'The author supports immigration with reasonable processing systems',
+            'This comment leans pro-immigration but accepts some controls',
+            'The author favors welcoming immigrants with proper procedures'
+        ],
+        'neutral': [
+            'This comment provides neutral information about immigration policy',
+            'The author presents balanced views on immigration reform',
+            'This text discusses immigration without taking a clear stance'
+        ],
+        'moderately_against': [
+            'The author has concerns about immigration but supports legal pathways',
+            'This comment leans toward restrictions but allows controlled immigration',
+            'The author moderately opposes unchecked immigration'
+        ],
+        'strongly_against': [
+            'The author strongly opposes immigration and supports border restrictions',
+            'This comment advocates for strict immigration controls and enforcement',
+            'The author expresses strong anti-immigration viewpoints'
+        ]
+    },
+
+    'healthcare': {
+        'strongly_favor': [
+            'The author strongly supports universal healthcare and single-payer systems',
+            'This comment advocates for government-provided healthcare for all citizens',
+            'The author expresses strong support for socialized medicine and healthcare as a right'
+        ],
+        'moderately_favor': [
+            'The author supports expanded government healthcare with some private options',
+            'This comment leans toward universal coverage but accepts mixed public-private systems',
+            'The author favors government healthcare expansion with pragmatic compromises'
+        ],
+        'neutral': [
+            'This comment provides neutral information about healthcare policy without taking sides',
+            'The author presents balanced views on different healthcare systems',
+            'This text discusses healthcare options without advocating for specific approaches'
+        ],
+        'moderately_against': [
+            'The author prefers market-based healthcare but accepts some government safety nets',
+            'This comment leans toward private healthcare while acknowledging need for limited government role',
+            'The author moderately opposes universal healthcare but supports targeted government programs'
+        ],
+        'strongly_against': [
+            'The author strongly opposes government healthcare and advocates for free-market solutions',
+            'This comment advocates against socialized medicine and for private healthcare systems',
+            'The author expresses strong opposition to universal healthcare and government involvement'
+        ]
+    },
+
+    'climate change': {
+        'strongly_favor': [
+            'The author strongly supports aggressive climate action and environmental protection',
+            'This comment advocates for immediate action on climate change',
+            'The author expresses strong environmental activist viewpoints'
+        ],
+        'moderately_favor': [
+            'The author supports climate action with balanced economic considerations',
+            'This comment leans toward environmental protection with practical limits',
+            'The author favors climate policies with gradual implementation'
+        ],
+        'neutral': [
+            'This comment provides neutral information about climate policy',
+            'The author presents balanced views on environmental issues',
+            'This text discusses climate without taking a clear stance'
+        ],
+        'moderately_against': [
+            'The author questions some climate policies but accepts environmental concerns',
+            'This comment leans skeptical but allows for some climate action',
+            'The author moderately opposes aggressive climate regulations'
+        ],
+        'strongly_against': [
+            'The author strongly opposes climate regulations and questions climate science',
+            'This comment advocates against environmental restrictions on business',
+            'The author expresses strong climate skepticism and anti-regulation views'
+        ]
+    }
+}
+
+# General fallback hypotheses for unknown topics
+GENERAL_STANCE_HYPOTHESES = {
+    'strongly_favor': [
+        'The author strongly supports the main position being discussed',
+        'This comment advocates strongly for the topic being debated',
+        'The author expresses strong support for the primary viewpoint'
+    ],
+    'moderately_favor': [
+        'The author moderately supports the main position with some reservations',
+        'This comment leans toward support but with qualifications',
+        'The author generally favors the position but acknowledges concerns'
+    ],
+    'neutral': [
+        'This comment provides neutral information without taking sides',
+        'The author presents balanced views on the topic',
+        'This text discusses the issue without clear position advocacy'
+    ],
+    'moderately_against': [
+        'The author has concerns about the main position but shows some flexibility',
+        'This comment leans against the primary viewpoint with some exceptions',
+        'The author moderately opposes the position but acknowledges some merit'
+    ],
+    'strongly_against': [
+        'The author strongly opposes the main position being discussed',
+        'This comment advocates strongly against the topic being debated',
+        'The author expresses strong opposition to the primary viewpoint'
+    ]
+}

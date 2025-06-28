@@ -30,6 +30,7 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
     log_dir.mkdir(exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_handler = logging.FileHandler(log_dir / f"belief_analysis_{timestamp}.log")
+    file_handler.setLevel(getattr(logging, log_level.upper()))
 
     # Console handler for immediate feedback
     console_handler = logging.StreamHandler()
