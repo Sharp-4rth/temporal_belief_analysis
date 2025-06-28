@@ -30,7 +30,7 @@ class BARTZeroShotClassifier:
             self.classifier = pipeline(
                 task="zero-shot-classification",
                 model=self.model_name,
-                device=device  # Add this line
+                device=device
             )
             logger.info(f"Loaded BART model: {self.model_name} on device: {'GPU' if device == 0 else 'CPU'}")
         except Exception as e:
@@ -58,6 +58,7 @@ class BARTZeroShotClassifier:
             }
 
         try:
+            # Pass the text and candidate labels
             result = self.classifier(text, candidate_labels)
 
             return {

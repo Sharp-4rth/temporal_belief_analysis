@@ -90,12 +90,6 @@ POLITICAL_TOPICS = [
 ]
 
 STANCE_LABELS = [
-    "liberal",
-    "conservative",
-    "neutral"
-]
-
-DETAILED_STANCE_LABELS = [
     "strongly liberal",
     "moderately liberal",
     "neutral",
