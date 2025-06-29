@@ -268,7 +268,7 @@ def classify_political_stance_improved(text, confidence_threshold=0.25, method='
     if len(clean_text) > 500:  # Limit for better performance
         clean_text = clean_text[:500] + "..."
 
-    # Get topic-appropriate stance categories
+    # Here we just get stance: hypotheses templates depending on topic
     stance_hypotheses = get_stance_hypotheses_for_topic(topic)
 
     # Add contextual framing based on topic
