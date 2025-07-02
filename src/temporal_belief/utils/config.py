@@ -89,7 +89,6 @@ POLITICAL_TOPICS = [
     'media and political commentary'
 ]
 
-
 TOPIC_STANCE_HYPOTHESES = {
     'abortion and reproductive rights': {
         'strongly_favor': [

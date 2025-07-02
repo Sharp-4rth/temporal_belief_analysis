@@ -79,7 +79,7 @@ class BARTZeroShotClassifier:
 
         Args:
             texts: List of input texts to classify
-            candidate_labels: List of possible labels
+            candidate_labels: List of possible labels (same for all texts)
 
         Returns:
             List of classification results, one per input text
@@ -91,7 +91,7 @@ class BARTZeroShotClassifier:
             return []
 
         try:
-            # Process all texts at once - this is where the speedup happens
+            # Process all texts at once with the same candidate labels
             results = self.classifier(texts, candidate_labels)
 
             # Convert to your expected format
