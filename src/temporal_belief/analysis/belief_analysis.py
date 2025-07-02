@@ -1,0 +1,1 @@
+"""Belief change analysis functionality."""
