@@ -10,8 +10,9 @@ __description__ = "Longitudinal belief change analysis"
 from .utils.config import ProjectConfig
 from .utils.logger import setup_logging
 # from data.loaders import RedditDataLoader
-from .core.topic_detection import TopicDetector
-from .core.stance_detection import StanceDetector
+# from .core.topic_detection import TopicDetector
+# from .core.stance_detection import StanceDetector
+from .core.timeline_building import TimelineBuilder
 
 def initialize_project(log_level: str = "INFO"):
     """Initialize project with configuration and logging.
@@ -32,8 +33,9 @@ def initialize_project(log_level: str = "INFO"):
 __all__ = [
     'ProjectConfig',
     'setup_logging',
-    'StanceDetector',
-    'TopicDetector',
+    # 'StanceDetector',
+    # 'TopicDetector',
     # 'RedditDataLoader',
+    'TimelineBuilder',
     'initialize_project'
 ]

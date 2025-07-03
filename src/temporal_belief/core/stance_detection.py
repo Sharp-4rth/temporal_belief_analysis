@@ -5,7 +5,7 @@ import logging
 from tqdm import tqdm
 
 from ..models.bart_classifier import BARTZeroShotClassifier
-from ..utils.config import STANCE_LABELS, ProjectConfig
+from ..utils.config import TOPIC_STANCE_HYPOTHESES, POLITICAL_TOPICS, ProjectConfig
 
 logger = logging.getLogger(__name__)
 
