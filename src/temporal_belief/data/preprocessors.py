@@ -63,3 +63,33 @@ class StancePreprocessor:
             result_lines[-1] = result_lines[-1].rstrip() + '"'
 
         return '\n'.join(result_lines)
+
+
+class ChangeDetectionFiltering:
+    """Filtering timelines for change detection."""
+
+    @staticmethod
+    def filter_for_change_detection(timelines, min_posts_per_topic=5, min_topics_per_user=2, min_confidence=0.0):
+        """Filter timelines to only include users/topics suitable for change detection"""
+        filtered_timelines = {}
+
+        for user_id, user_timeline in timelines.items():
+            filtered_user_timeline = {}
+
+            for topic, topic_posts in user_timeline.items():
+                # Filter by confidence (if you have access to corpus here)
+                reliable_posts = {}
+                for utt_id, stance in topic_posts.items():
+                    # You'd need to pass corpus or confidence scores here
+                    # For now, assume all posts are reliable
+                    reliable_posts[utt_id] = stance
+
+                # Check minimum posts per topic
+                if len(reliable_posts) >= min_posts_per_topic:
+                    filtered_user_timeline[topic] = reliable_posts
+
+            # Check minimum topics per user
+            if len(filtered_user_timeline) >= min_topics_per_user:
+                filtered_timelines[user_id] = filtered_user_timeline
+
+        return filtered_timelines
