@@ -65,7 +65,7 @@ class StancePreprocessor:
         return '\n'.join(result_lines)
 
 
-class ChangeDetectionFiltering:
+class ChangeDetectorPreprocessor:
     """Filtering timelines for change detection."""
 
     @staticmethod
