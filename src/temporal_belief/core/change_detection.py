@@ -33,7 +33,7 @@ class ChangeDetector:
               utt_id = topic_timeline[i][0]
               change_point = (change_index, utt_id)
               change_points.append(change_point)
-              print(f"Current:{topic_timeline[i][1]}, Previous: {topic_timeline[i-1][1]} and Next:{topic_timeline[i+1][1]}")
+              # print(f"Current:{topic_timeline[i][1]}, Previous: {topic_timeline[i-1][1]} and Next:{topic_timeline[i+1][1]}")
 
         return change_points
 

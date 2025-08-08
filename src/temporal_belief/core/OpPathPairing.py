@@ -73,10 +73,10 @@ class OpPathPairer:
         all_op_utterances = self.extract_op_utterances_from_all_convos(candidate_convos, user_id)
 
         # debug:
-        for op_utt in all_op_utterances:
-            print(f'my input user_id: {user_id}')
-            speaker_id = self.corpus.get_utterance(op_utt.id).speaker.id
-            print(f'Utt_id: {op_utt.id} and user_id: {speaker_id} in the list of all op utterances.')
+        # for op_utt in all_op_utterances:
+        #     print(f'my input user_id: {user_id}')
+        #     speaker_id = self.corpus.get_utterance(op_utt.id).speaker.id
+        #     print(f'Utt_id: {op_utt.id} and user_id: {speaker_id} in the list of all op utterances.')
 
         all_ops_n_paths = []
         for op_utt in all_op_utterances:
