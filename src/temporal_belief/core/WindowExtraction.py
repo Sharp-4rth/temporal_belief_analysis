@@ -18,9 +18,9 @@ class WindowExtractor:
 
         return user_conversations
 
-    def get_conversations_around_change_point(self, corpus, change_points):
+    def get_conversations_around_change_point(self, corpus, change_point):
         # Get first change (probably only one I need)
-        utterance = corpus.get_utterance(change_points[0][1])
+        utterance = corpus.get_utterance(change_point[0][1])
 
         # Find the convo this utterance belongs to:
         conversation = utterance.get_conversation()
