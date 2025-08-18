@@ -1,4 +1,4 @@
-from temporal_belief.core.WindowExtraction import WindowExtractor
+from temporal_belief.core.window_extraction import WindowExtractor
 
 
 class OpPathPairer:

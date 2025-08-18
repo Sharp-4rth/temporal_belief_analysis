@@ -1,4 +1,4 @@
-
+import re
 
 class StancePreprocessor:
     """Preprocess r/PoliticalDiscussion dataset for stance detection."""
@@ -93,3 +93,84 @@ class ChangeDetectorPreprocessor:
                 filtered_timelines[user_id] = filtered_user_timeline
 
         return filtered_timelines
+
+
+class PairPreprocessor:
+
+    def tokenize_quotes(self, utterance_text):
+        lines = utterance_text.split('\n')
+        processed_lines = []
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith('&gt;') or line.startswith('>'):
+                processed_lines.append('[QUOTE]')
+            else:
+                processed_lines.append(line)
+
+        return '\n'.join(processed_lines)
+
+    def concatenate_path(self, paths):
+        concatenated_paths = {}
+        for key, utt_list in paths.items():
+            path_text = ''
+            for utt in utt_list:
+                utt_text_quoted = self.tokenize_quotes(utt.text)
+                path_text += utt_text_quoted + ' '
+            concatenated_paths[key] = path_text.strip()
+        return concatenated_paths
+
+    def tokenize_and_lower(op_text, reply_path_text, stop_words_set):
+        op_words = op_text.lower().split()
+        reply_words = reply_path_text.lower().split()
+
+        return (op_words, reply_words)
+
+    # This pattern keeps letters, numbers, whitespace, and apostrophes (for contractions)
+    def remove_punctuation(op_text, reply_path_text):
+        op_text = re.sub(r"[^\w\s']", '', op_text)
+        reply_path_text = re.sub(r"[^\w\s']", '', reply_path_text)
+
+        return op_text, reply_path_text
+
+    def remove_quotes_from_all(self, op_path_pairs):
+        marked_pairs = []
+        for op_path_pair in op_path_pairs:
+            # Process the OP utterance
+            op_text = self.tokenize_quotes(op_path_pair[0].text)
+
+            # Process each utterance path
+            processed_paths = []
+            for utterances in op_path_pair[1].values():
+                path = [self.tokenize_quotes(utt.text) for utt in utterances]
+                processed_paths.append(path)
+
+            marked_pairs.append((op_text, processed_paths))
+
+        return marked_pairs
+
+    def concatenate_path_in_pair(self, pair):
+        op = pair[0]
+        paths = pair[1]
+
+        concatenated_paths = self.concatenate_path(paths)
+
+        return (op, concatenated_paths)
+
+    def concatenate_path_in_all_pairs(self, op_path_pairs):
+        # op_path_pairs_quoted = self.remove_quotes_from_all(op_path_pairs)
+        preprocessed_pairs = []
+        for pair in op_path_pairs:
+            pair = self.concatenate_path_in_pair(pair)
+            preprocessed_pairs.append(pair)
+
+        return preprocessed_pairs
+
+    def clean_and_tokenize(self, op_text, reply_path_text):
+        # Step 1: Remove punctuation
+        op_text, reply_path_text = self.remove_punctuation(op_text, reply_path_text)
+
+        # Step 2: Tokenize and lowercase
+        op_words, reply_words = self.tokenize_and_lower(op_text, reply_path_text)
+
+        return op_words, reply_words
