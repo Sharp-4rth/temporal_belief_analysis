@@ -26,10 +26,10 @@ class TimelineBuilder:
 
         for utterance in self.corpus.iter_utterances():
             # Skip if no stance metadata on utterance
-            if not utterance.meta or 'detected_stance' not in utterance.meta:
-                continue
-
-            # Get topic from conversation metadata
+            # if not utterance.meta or 'detected_stance' not in utterance.meta:
+            #     continue
+            #
+            # # Get topic from conversation metadata
             conversation = utterance.get_conversation()
             if not conversation or not conversation.meta or 'detected_topic' not in conversation.meta:
                 continue
@@ -39,7 +39,7 @@ class TimelineBuilder:
 
             user_id = utterance.speaker.id
             topic = conversation.meta['detected_topic']
-            stance = utterance.meta['detected_stance']
+            stance = utterance.meta.get('detected_stance', 'Unknown')
 
             user_topic_posts[user_id][topic].append({
                 'utterance_id': utterance.id,
