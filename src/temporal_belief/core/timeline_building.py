@@ -1,7 +1,38 @@
-
 from typing import Dict, Any
 from collections import defaultdict
 import logging
+
+MERGED_TOPIC = {
+    # Economy
+    'economic policy': 'Economy & Tax',
+    'taxation and government spending': 'Economy & Tax',
+
+    # Healthcare
+    'healthcare policy': 'Healthcare',
+
+    # Civil rights / justice / education / voting
+    'civil rights and social issues': 'Civil Rights, Justice & Education',
+    'criminal justice and policing': 'Civil Rights, Justice & Education',
+    'voting rights and elections': 'Civil Rights, Justice & Education',
+    'education policy': 'Civil Rights, Justice & Education',
+
+    # Hot-button singles
+    'gun rights and control': 'Guns',
+    'abortion and reproductive rights': 'Abortion',
+    'immigration policy': 'Immigration',
+    'climate change and energy policy': 'Climate & Energy',
+
+    # Foreign / defense
+    'foreign policy and defense': 'Foreign & Defense',
+
+    # Meta / process / actors
+    'political figures and campaigns': 'Process & Actors (Meta)',
+    'congressional politics': 'Process & Actors (Meta)',
+    'electoral politics': 'Process & Actors (Meta)',
+    'political parties and ideology': 'Process & Actors (Meta)',
+    'media and political commentary': 'Process & Actors (Meta)',
+}
+
 
 class TimelineBuilder:
     """Simple timeline builder for user belief tracking.
@@ -15,7 +46,7 @@ class TimelineBuilder:
         self.min_topics_per_user = min_topics_per_user
         self.logger = logging.getLogger(__name__)
 
-    def build_timelines(self) -> Dict[str, Dict[str, Dict[str, str]]]:
+    def build_timelines(self, include_all=True) -> Dict[str, Dict[str, Dict[str, str]]]:
         """Build user timelines from corpus with stance metadata.
 
         Returns:
@@ -26,10 +57,11 @@ class TimelineBuilder:
 
         for utterance in self.corpus.iter_utterances():
             # Skip if no stance metadata on utterance
-            # if not utterance.meta or 'detected_stance' not in utterance.meta:
-            #     continue
-            #
-            # # Get topic from conversation metadata
+            if include_all == False:
+                if not utterance.meta or 'detected_stance' not in utterance.meta:
+                    continue
+
+            # Get topic from conversation metadata
             conversation = utterance.get_conversation()
             if not conversation or not conversation.meta or 'detected_topic' not in conversation.meta:
                 continue
@@ -38,7 +70,8 @@ class TimelineBuilder:
                 continue
 
             user_id = utterance.speaker.id
-            topic = conversation.meta['detected_topic']
+            old_topic = conversation.meta['detected_topic']
+            topic = MERGED_TOPIC.get(old_topic, old_topic)
             stance = utterance.meta.get('detected_stance', 'Unknown')
 
             user_topic_posts[user_id][topic].append({

@@ -13,8 +13,9 @@ class ChangeDetector:
         self.persistence_threshold = persistence_threshold
         self.alpha = significance_level
         self.stance_values = {
-            'strongly_against': -2, 'moderately_against': -1,
-            'neutral': 0, 'moderately_favor': 1, 'strongly_favor': 2
+            'left-leaning': 1,
+            'neutral': 0,
+            'right-leaning': 2
         }
         self.all_change_points = []
         self.all_no_change_points = []
@@ -26,6 +27,8 @@ class ChangeDetector:
         """
         if len(topic_timeline) < self.window_size * 2:
             return {'change_points': [], 'no_change_points': []}
+
+        print('new one')
 
         # Convert stances to numerical values
         numerical_stances = []

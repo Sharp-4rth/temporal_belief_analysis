@@ -6,12 +6,13 @@ class WindowExtractor:
         self.timelines = timelines
         self.user_conversations_cache = {}  # Add cache
 
-    def build_global_user_conversations_index(self):
+    def build_global_user_conversations_index(self, max_convos):
         """Build sorted conversations for ALL users upfront"""
         print("Building global user conversations index...")
         user_conversations = {}
 
-        for convo in self.corpus.iter_conversations():
+        convos = list(corpus.iter_conversations())[:max_convos]
+        for convo in convos:
             # Get all speakers in this conversation
             speakers = {utt.speaker.id for utt in convo.iter_utterances()}
 
