@@ -1,6 +1,7 @@
 from temporal_belief.core.window_extraction import WindowExtractor
 
 
+
 class OpPathPairer:
     """ Pair OP utterances with a path of responses by a user/challenger"""
     def __init__(self, corpus, timelines):
@@ -26,10 +27,16 @@ class OpPathPairer:
 
         return trimmed_paths
 
-    def _filter_paths(self, trimmed_paths):
+    def _filter_paths(self, trimmed_paths, op_speaker_id):
+        """Filter paths to create rooted path-units, excluding OP utterances"""
         filtered_paths = {}
+
         for path_index, path in enumerate(trimmed_paths):
             for utt in path:
+                # Skip if this utterance is from the OP
+                if utt.speaker.id == op_speaker_id:
+                    continue
+
                 key = f"{utt.speaker.id}_path_{path_index}"
                 if key not in filtered_paths:
                     filtered_paths[key] = []
@@ -37,13 +44,12 @@ class OpPathPairer:
 
         return filtered_paths
 
-
     def extract_rooted_paths(self, op_utterance):
         trimmed_path = self._trim_paths(op_utterance)
-        filtered_path = self._filter_paths(trimmed_path)
+        # Pass the OP's speaker ID to filter method
+        filtered_path = self._filter_paths(trimmed_path, op_utterance.speaker.id)
 
         return filtered_path
-
 
     # Find the op_utterances from a convo and add them to a list
     def extract_op_utterances_from_convo(self, candidate_convo, user_id):
@@ -57,7 +63,6 @@ class OpPathPairer:
 
         return op_utterances
 
-
     # Get all op_utterances accross every candidate convo
     def extract_op_utterances_from_all_convos(self, candidate_convos, user_id):
         all_op_utterances = []
@@ -66,7 +71,6 @@ class OpPathPairer:
             all_op_utterances.extend(op_utterances)
 
         return all_op_utterances
-
 
     # Get the paths of an op_utterance from the op_utterances list
     def extract_rooted_path_from_candidate_convos(self, candidate_convos, user_id):

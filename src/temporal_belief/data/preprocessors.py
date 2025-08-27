@@ -1,4 +1,5 @@
 import re
+import tqdm
 
 class StancePreprocessor:
     """Preprocess r/PoliticalDiscussion dataset for stance detection."""
@@ -120,14 +121,14 @@ class PairPreprocessor:
             concatenated_paths[key] = path_text.strip()
         return concatenated_paths
 
-    def tokenize_and_lower(op_text, reply_path_text, stop_words_set):
+    def tokenize_and_lower(self, op_text, reply_path_text, stop_words_set):
         op_words = op_text.lower().split()
         reply_words = reply_path_text.lower().split()
 
         return (op_words, reply_words)
 
     # This pattern keeps letters, numbers, whitespace, and apostrophes (for contractions)
-    def remove_punctuation(op_text, reply_path_text):
+    def remove_punctuation(self, op_text, reply_path_text):
         op_text = re.sub(r"[^\w\s']", '', op_text)
         reply_path_text = re.sub(r"[^\w\s']", '', reply_path_text)
 
@@ -174,3 +175,135 @@ class PairPreprocessor:
         op_words, reply_words = self.tokenize_and_lower(op_text, reply_path_text)
 
         return op_words, reply_words
+
+class ExtractFeatures:
+
+    # Feature extraction functions (return features, not scores)
+    def get_politeness_features(self, concatenated_path_text):
+        """Fast regex-based approximation - good enough for thesis analysis"""
+        text_lower = concatenated_path_text.lower()
+
+        return {
+            'politeness_gratitude': len(
+                re.findall(r'\b(thank|thanks|grateful|appreciate|gratitude)\b', text_lower)),
+            'politeness_apologizing': len(
+                re.findall(r'\b(sorry|apolog|excuse me|my bad|my mistake)\b', text_lower)),
+            'politeness_please': len(re.findall(r'\bplease\b', text_lower)),
+            'politeness_indirect_greeting': len(re.findall(r'\b(hello|hi|hey|greetings)\b', text_lower)),
+            'politeness_please_start': 1 if re.match(r'^\s*please\b', text_lower) else 0,
+            'politeness_hashedge': len(
+                re.findall(r'\b(maybe|perhaps|might|could|would|possibly|probably|seems|appears)\b', text_lower)),
+            'politeness_deference': len(
+                re.findall(r'\b(sir|madam|mr\.|mrs\.|ms\.|dr\.|professor|respectfully)\b', text_lower)),
+        }
+
+    def extract_argument_complexity_features(self, text):
+        words = text.split()
+        sentences = [s for s in text.split('.') if s.strip()]
+        subordinating = ['because', 'since', 'although', 'while', 'whereas', 'if']
+
+        return {
+            'word_count': len(words),
+            'unique_words': len(set(words)),
+            'sentence_count': len(sentences),
+            'subordinating_count': sum(text.lower().count(word) for word in subordinating)
+        }
+
+    def extract_evidence_features(self, text):
+        import re
+        evidence_patterns = [
+            r'http[s]?://\S+',
+            r'according to',
+            r'research shows',
+            r'studies indicate',
+            r'data suggests',
+            r'statistics show',
+            r'survey found',
+            r'report states'
+        ]
+
+        evidence_counts = {}
+        for i, pattern in enumerate(evidence_patterns):
+            evidence_counts[f'evidence_type_{i}'] = len(re.findall(pattern, text.lower()))
+
+        return evidence_counts
+
+    def extract_hedging_features(self, text):
+        hedges = [
+            'might', 'could', 'perhaps', 'possibly', 'probably', 'likely',
+            'seems', 'appears', 'suggests', 'indicates', 'tends to',
+            'generally', 'usually', 'often', 'sometimes', 'may'
+        ]
+
+        hedge_counts = {}
+        for hedge in hedges:
+            hedge_counts[f'hedge_{hedge}'] = text.lower().count(hedge)
+
+        return {
+            'hedge_counts': hedge_counts,
+            'total_words': len(text.split())
+        }
+
+    # Scoring functions (take features, return single score)
+    def calculate_complexity_score(self, features):
+        if features['word_count'] == 0:
+            return 0
+
+        lexical_diversity = features['unique_words'] / features['word_count']
+        avg_sentence_length = features['word_count'] / max(1, features['sentence_count'])
+        subordinating_ratio = features['subordinating_count'] / features['word_count']
+
+        return lexical_diversity + (avg_sentence_length / 100) + subordinating_ratio
+
+    def calculate_evidence_score(self, features):
+        return sum(features.values())
+
+    def calculate_hedging_score_from_features(self, features):
+        total_hedges = sum(features['hedge_counts'].values())
+        return total_hedges / max(1, features['total_words'])
+
+class GroupPreprocessor:
+
+    def filter_groups(self, groups, groups_tuple):
+        # Calculate activity per user in treatment group
+        treatment_total = 0
+        control_total = 0
+        for group_idx, group in enumerate(tqdm(groups_tuple, desc="Processing groups")):
+            for user_id, topic_timelines in group.items():
+                for topic_timeline in topic_timelines.values():
+                    for change_point in topic_timeline.keys():
+                        if group_idx == 0:  # Iterate through change points (keys)
+                            treatment_total += 1
+                        elif group_idx == 1:
+                            control_total += 1
+
+        print(f"treatment: {treatment_total}")
+        # print(f"Control: {control_total}")
+
+        treatment_activity = []
+        for user_id, timelines in groups['with_changes'].items():
+            total_points = sum(len(timeline) for timeline in timelines.values())
+            treatment_activity.append(total_points)
+
+        target_activity = sum(treatment_activity) // len(treatment_activity)  # Average activity
+        target_total = treatment_total  # Match treatment group size
+
+        # Filter control group users by similar activity level
+        filtered_control = {}
+        control_total = 0
+
+        for user_id, timelines in groups['no_changes'].items():
+            user_activity = sum(len(timeline) for timeline in timelines.values())
+
+            # Keep users with similar activity level
+            if target_activity * 0.5 <= user_activity <= target_activity * 2:
+                filtered_control[user_id] = timelines
+                control_total += user_activity
+
+                # Stop when we reach target total
+                if control_total >= target_total:
+                    break
+
+        # Replace control group
+        groups_tuple = (groups['with_changes'], filtered_control)
+        print(f"Filtered control group: {len(filtered_control)} users, ~{control_total} total points")

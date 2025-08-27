@@ -1,38 +1,7 @@
 from typing import Dict, Any
 from collections import defaultdict
 import logging
-
-MERGED_TOPIC = {
-    # Economy
-    'economic policy': 'Economy & Tax',
-    'taxation and government spending': 'Economy & Tax',
-
-    # Healthcare
-    'healthcare policy': 'Healthcare',
-
-    # Civil rights / justice / education / voting
-    'civil rights and social issues': 'Civil Rights, Justice & Education',
-    'criminal justice and policing': 'Civil Rights, Justice & Education',
-    'voting rights and elections': 'Civil Rights, Justice & Education',
-    'education policy': 'Civil Rights, Justice & Education',
-
-    # Hot-button singles
-    'gun rights and control': 'Guns',
-    'abortion and reproductive rights': 'Abortion',
-    'immigration policy': 'Immigration',
-    'climate change and energy policy': 'Climate & Energy',
-
-    # Foreign / defense
-    'foreign policy and defense': 'Foreign & Defense',
-
-    # Meta / process / actors
-    'political figures and campaigns': 'Process & Actors (Meta)',
-    'congressional politics': 'Process & Actors (Meta)',
-    'electoral politics': 'Process & Actors (Meta)',
-    'political parties and ideology': 'Process & Actors (Meta)',
-    'media and political commentary': 'Process & Actors (Meta)',
-}
-
+from ..utils.config import MERGED_TOPIC
 
 class TimelineBuilder:
     """Simple timeline builder for user belief tracking.
