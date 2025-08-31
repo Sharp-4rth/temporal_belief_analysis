@@ -307,3 +307,5 @@ class GroupPreprocessor:
         # Replace control group
         groups_tuple = (groups['with_changes'], filtered_control)
         print(f"Filtered control group: {len(filtered_control)} users, ~{control_total} total points")
+
+        return groups_tuple

@@ -13,7 +13,7 @@ class WindowExtractor:
         print("Building global user conversations index...")
         user_conversations = {}
 
-        convos = list(corpus.iter_conversations())
+        convos = list(self.corpus.iter_conversations())
         print(f"Processing {len(convos)} conversations...")
 
         for convo in convos:
