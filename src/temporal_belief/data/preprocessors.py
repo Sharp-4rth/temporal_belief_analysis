@@ -1,5 +1,9 @@
 import re
 import tqdm
+import numpy as np
+from scipy import stats
+from scipy.stats import mannwhitneyu, levene, shapiro
+import pandas as pd
 
 class StancePreprocessor:
     """Preprocess r/PoliticalDiscussion dataset for stance detection."""
@@ -309,3 +313,220 @@ class GroupPreprocessor:
         print(f"Filtered control group: {len(filtered_control)} users, ~{control_total} total points")
 
         return groups_tuple
+
+    def get_target(self, groups_tuple):
+        # Calculate the number of utterances in each group
+        print("Calculating group sizes...")
+        group_sizes = []
+
+        for group_idx, group in enumerate(tqdm(groups_tuple, desc="Counting utterances in groups")):
+            utterance_count = 0
+
+            for user_id, topic_timelines in group.items():
+                for topic_timeline in topic_timelines.values():
+                    utterance_count += len(topic_timeline.keys())  # Each key is a change point/utterance
+
+            group_sizes.append(utterance_count)
+            print(f"Group {group_idx + 1}: {utterance_count} utterances")
+
+        # Set target_utterances to the smallest group size
+        target_utterances = min(group_sizes)
+        print(f"\nSmallest group has {target_utterances} utterances")
+        print(f"Setting target_utterances = {target_utterances}")
+
+        # Show the sampling strategy
+        print(f"\nSampling strategy:")
+        for group_idx, size in enumerate(group_sizes):
+            print(
+                f"Group {group_idx + 1}: {size} total → {target_utterances} sampled ({target_utterances / size * 100:.1f}%)")
+
+        return target_utterances
+
+    def run_statistical_comparison(self, group_scores, alpha=0.05):
+
+
+        def cohen_d(group1, group2):
+            """Calculate Cohen's d for effect size"""
+            n1, n2 = len(group1), len(group2)
+            pooled_std = np.sqrt(
+                ((n1 - 1) * np.var(group1, ddof=1) + (n2 - 1) * np.var(group2, ddof=1)) / (n1 + n2 - 2))
+            return (np.mean(group1) - np.mean(group2)) / pooled_std
+
+        def interpret_effect_size(d):
+            """Interpret Cohen's d effect size"""
+            abs_d = abs(d)
+            if abs_d < 0.2:
+                return "Negligible"
+            elif abs_d < 0.5:
+                return "Small"
+            elif abs_d < 0.8:
+                return "Medium"
+            else:
+                return "Large"
+
+        print("=== STATISTICAL SIGNIFICANCE TESTING ===\n")
+
+        if len(group_scores) < 2:
+            print("Error: Need at least 2 groups for comparison")
+        else:
+            # Extract scores for the two groups
+            group1_scores = group_scores[0]
+            group2_scores = group_scores[1]
+
+            # Results storage
+            results_df = []
+
+            print(f"Group 1 sample sizes: {[len(scores) for scores in group1_scores.values()]}")
+            print(f"Group 2 sample sizes: {[len(scores) for scores in group2_scores.values()]}")
+            print()
+
+            # Test each predictor
+            for predictor in group1_scores.keys():
+                print(f"=== {predictor.upper()} ===")
+
+                # Get scores for both groups
+                g1_scores = np.array(group1_scores[predictor])
+                g2_scores = np.array(group2_scores[predictor])
+
+                # Skip if either group has no scores
+                if len(g1_scores) == 0 or len(g2_scores) == 0:
+                    print(f"Skipping {predictor}: One or both groups have no scores\n")
+                    continue
+
+                # Basic descriptive statistics
+                g1_mean, g1_std = np.mean(g1_scores), np.std(g1_scores, ddof=1)
+                g2_mean, g2_std = np.mean(g2_scores), np.std(g2_scores, ddof=1)
+
+                print(f"Group 1: μ = {g1_mean:.4f}, σ = {g1_std:.4f}, n = {len(g1_scores)}")
+                print(f"Group 2: μ = {g2_mean:.4f}, σ = {g2_std:.4f}, n = {len(g2_scores)}")
+
+                # Calculate difference and percentage change
+                difference = g1_mean - g2_mean
+                percent_change = (difference / g2_mean * 100) if g2_mean != 0 else 0
+                print(f"Difference: {difference:.4f} ({percent_change:+.1f}%)")
+
+                # Test for normality (if sample size allows)
+                normal_g1 = normal_g2 = None
+                if len(g1_scores) >= 3:
+                    _, p_norm_g1 = shapiro(g1_scores[:5000] if len(g1_scores) > 5000 else g1_scores)
+                    normal_g1 = p_norm_g1 > 0.05
+                if len(g2_scores) >= 3:
+                    _, p_norm_g2 = shapiro(g2_scores[:5000] if len(g2_scores) > 5000 else g2_scores)
+                    normal_g2 = p_norm_g2 > 0.05
+
+                # Test for equal variances
+                equal_var = None
+                if len(g1_scores) >= 2 and len(g2_scores) >= 2:
+                    _, p_levene = levene(g1_scores, g2_scores)
+                    equal_var = p_levene > 0.05
+
+                print(f"Normality: G1={normal_g1}, G2={normal_g2}")
+                print(f"Equal variances: {equal_var}")
+
+                # Choose appropriate test
+                if normal_g1 and normal_g2 and equal_var:
+                    # Two-sample t-test (equal variances)
+                    t_stat, p_value = stats.ttest_ind(g1_scores, g2_scores, equal_var=True)
+                    test_used = "Two-sample t-test (equal var)"
+                elif normal_g1 and normal_g2 and not equal_var:
+                    # Welch's t-test (unequal variances)
+                    t_stat, p_value = stats.ttest_ind(g1_scores, g2_scores, equal_var=False)
+                    test_used = "Welch's t-test (unequal var)"
+                else:
+                    # Mann-Whitney U test (non-parametric)
+                    u_stat, p_value = mannwhitneyu(g1_scores, g2_scores, alternative='two-sided')
+                    test_used = "Mann-Whitney U test"
+                    t_stat = u_stat
+
+                # Effect size (Cohen's d)
+                effect_size = cohen_d(g1_scores, g2_scores)
+                effect_interpretation = interpret_effect_size(effect_size)
+
+                # Significance interpretation
+                if p_value < 0.001:
+                    significance = "***"
+                    sig_text = "p < 0.001"
+                elif p_value < 0.01:
+                    significance = "**"
+                    sig_text = "p < 0.01"
+                elif p_value < 0.05:
+                    significance = "*"
+                    sig_text = "p < 0.05"
+                elif p_value < 0.1:
+                    significance = "."
+                    sig_text = "p < 0.1 (marginal)"
+                else:
+                    significance = ""
+                    sig_text = "not significant"
+
+                print(f"Test used: {test_used}")
+                print(f"Test statistic: {t_stat:.4f}")
+                print(f"p-value: {p_value:.6f} {significance}")
+                print(f"Result: {sig_text}")
+                print(f"Effect size (Cohen's d): {effect_size:.4f} ({effect_interpretation})")
+
+                # Store results
+                results_df.append({
+                    'Predictor': predictor,
+                    'Group_1_Mean': g1_mean,
+                    'Group_1_SD': g1_std,
+                    'Group_1_N': len(g1_scores),
+                    'Group_2_Mean': g2_mean,
+                    'Group_2_SD': g2_std,
+                    'Group_2_N': len(g2_scores),
+                    'Difference': difference,
+                    'Percent_Change': percent_change,
+                    'Test_Used': test_used,
+                    'Test_Statistic': t_stat,
+                    'P_Value': p_value,
+                    'Significance': significance,
+                    'Effect_Size_d': effect_size,
+                    'Effect_Interpretation': effect_interpretation,
+                    'Significant': p_value < 0.05
+                })
+
+                print("-" * 50)
+                print()
+
+            # Create summary table
+            results_df = pd.DataFrame(results_df)
+
+            print("=== SUMMARY TABLE ===")
+            summary_table = results_df[['Predictor', 'Group_1_Mean', 'Group_2_Mean', 'Difference',
+                                        'P_Value', 'Significance', 'Effect_Size_d', 'Effect_Interpretation']]
+            print(summary_table.to_string(index=False, float_format='%.4f'))
+
+            print(f"\n=== OVERALL RESULTS ===")
+            significant_predictors = results_df[results_df['Significant'] == True]
+            print(f"Significant predictors (p < 0.05): {len(significant_predictors)}/{len(results_df)}")
+
+            if len(significant_predictors) > 0:
+                print("\nSignificant findings:")
+                for _, row in significant_predictors.iterrows():
+                    direction = "higher" if row['Difference'] > 0 else "lower"
+                    print(f"  • {row['Predictor']}: Group 1 {direction} than Group 2")
+                    print(f"    Difference: {row['Difference']:.4f} ({row['Percent_Change']:+.1f}%)")
+                    print(
+                        f"    p = {row['P_Value']:.6f}, d = {row['Effect_Size_d']:.4f} ({row['Effect_Interpretation']})")
+
+            # Multiple comparison correction (Bonferroni)
+            n_tests = len(results_df)
+            bonferroni_alpha = 0.05 / n_tests
+            bonferroni_significant = results_df[results_df['P_Value'] < bonferroni_alpha]
+
+            print(f"\n=== MULTIPLE COMPARISON CORRECTION ===")
+            print(f"Bonferroni corrected α = 0.05/{n_tests} = {bonferroni_alpha:.6f}")
+            print(f"Significant after correction: {len(bonferroni_significant)}/{len(results_df)}")
+
+            if len(bonferroni_significant) > 0:
+                print("\nBonferroni-corrected significant findings:")
+                for _, row in bonferroni_significant.iterrows():
+                    direction = "higher" if row['Difference'] > 0 else "lower"
+                    print(f"  • {row['Predictor']}: Group 1 {direction} than Group 2")
+                    print(f"    p = {row['P_Value']:.6f} < {bonferroni_alpha:.6f}")
+
+            # Store results for later use
+            globals()['statistical_results'] = results_df
+            print(f"\nResults saved to 'statistical_results' DataFrame")
+
+        return results_df

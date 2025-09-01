@@ -12,7 +12,7 @@ class ChangeDetector:
     significant shifts in political orientation over time.
     """
 
-    def __init__(self, threshold=3.0, drift=0.5, min_change_separation=5):
+    def __init__(self, threshold=6.0, drift=0.5, min_change_separation=5):
         """Initialize CUSUM detector with control parameters.
 
         Args:
