@@ -344,7 +344,6 @@ class GroupPreprocessor:
 
     def run_statistical_comparison(self, group_scores, alpha=0.05):
 
-
         def cohen_d(group1, group2):
             """Calculate Cohen's d for effect size"""
             n1, n2 = len(group1), len(group2)
