@@ -1,0 +1,5 @@
+# Logs:
+/notebooks/logs
+
+# Metadata:
+/src/*.egg-info
